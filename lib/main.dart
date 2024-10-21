@@ -1,5 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:pivot/group_table.dart';
+import 'package:pivot/pivot_table.dart';
 
 void main() {
   runApp(MyApp());
@@ -11,23 +12,164 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(title: Text('Custom Pivot Table')),
-        body: HomePage(),
+        body:
+            // GroupedPaginatedTable(),
+
+            HomePage(
+          orhers: ["sales", "profit", "quantity", "rating", "discount"],
+          valueKey: "cost",
+          rowKey: "category",
+          columnKey: "region",
+          selectedFilterKey: "year",
+          json: '''
+[
+  {
+    "category": "Fruits",
+    "region": "North",
+    "year": 2023,
+    "cost": 7000,
+    "sales": 1200,
+    "profit": 300,
+    "quantity": 500,
+    "supplier": "Supplier A",
+    "discount": 5,
+    "rating": 4.5,
+    "availability": "In Stock"
+  },
+  {
+    "category": "Fruits",
+    "region": "South",
+    "year": 2023,
+    "cost": 7000,
+    "sales": 1500,
+    "profit": 400,
+    "quantity": 550,
+    "supplier": "Supplier B",
+    "discount": 7,
+    "rating": 4.7,
+    "availability": "In Stock"
+  },
+  {
+    "category": "Vegetables",
+    "region": "North",
+    "year": 2022,
+    "cost": 7000,
+    "sales": 1100,
+    "profit": 250,
+    "quantity": 600,
+    "supplier": "Supplier C",
+    "discount": 6,
+    "rating": 4.3,
+    "availability": "Out of Stock"
+  },
+  {
+    "category": "Vegetables",
+    "region": "GTA",
+    "year": 2023,
+    "cost": 7000,
+    "sales": 900,
+    "profit": 200,
+    "quantity": 450,
+    "supplier": "Supplier D",
+    "discount": 4,
+    "rating": 4.0,
+    "availability": "In Stock"
+  },
+  {
+    "category": "Fruits",
+    "region": "GTA",
+    "year": 2022,
+    "cost": 7000,
+    "sales": 1000,
+    "profit": 220,
+    "quantity": 480,
+    "supplier": "Supplier E",
+    "discount": 5,
+    "rating": 4.1,
+    "availability": "In Stock"
+  },
+  {
+    "category": "Vegetables",
+    "region": "South",
+    "year": 2023,
+    "cost": 7000,
+    "sales": 900,
+    "profit": 210,
+    "quantity": 420,
+    "supplier": "Supplier F",
+    "discount": 6,
+    "rating": 4.4,
+    "availability": "Out of Stock"
+  },
+  {
+    "category": "Vegetables",
+    "region": "KSK",
+    "year": 2022,
+    "cost": 7000,
+    "sales": 1000,
+    "profit": 300,
+    "quantity": 500,
+    "supplier": "Supplier G",
+    "discount": 8,
+    "rating": 4.6,
+    "availability": "In Stock"
+  },
+  {
+    "category": "Vegetables",
+    "region": "TK",
+    "year": 2021,
+    "cost": 9000,
+    "sales": 1000,
+    "profit": 350,
+    "quantity": 540,
+    "supplier": "Supplier H",
+    "discount": 10,
+    "rating": 4.8,
+    "availability": "In Stock"
+  }
+]
+''',
+        ),
       ),
     );
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final String columnKey;
+  final String rowKey;
+  final String valueKey;
+  final String selectedFilterKey;
+  final String json;
+  final List<String> orhers;
+  const HomePage({
+    super.key,
+    required this.columnKey,
+    required this.rowKey,
+    required this.valueKey,
+    required this.selectedFilterKey,
+    required this.json,
+    required this.orhers,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  List<String> columns = [];
-  List<String> fields = ["ID", "Name", "Designation", "Salary"];
-  List<String> rows = [];
+  List<String> orhers = ["sales"];
+  List<String> columns = [
+    "product",
+  ];
+  List<String> filters = [
+    'year',
+  ];
+  List<String> rows = [
+    "location",
+  ];
+  List<String> values = [
+    "price",
+  ];
 
   List<Widget> containers(List<String> type) {
     return type.map((e) {
@@ -42,11 +184,24 @@ class _HomePageState extends State<HomePage> {
             child: Text(e),
           ),
         ),
+        childWhenDragging: Opacity(
+          opacity: 0.5,
+          child: Container(
+            alignment: Alignment.center,
+            color: Theme.of(context).primaryColor.withOpacity(0.2),
+            margin: EdgeInsets.all(3),
+            width: double.infinity,
+            height: 50,
+            child: Text(e),
+          ),
+        ),
+        // Offset to center the feedback under the pointer
+
         child: Container(
           alignment: Alignment.center,
           color: Theme.of(context).primaryColor.withOpacity(0.2),
           margin: EdgeInsets.all(3),
-          width: 100,
+          width: double.infinity,
           height: 50,
           child: Text(e),
         ),
@@ -54,291 +209,145 @@ class _HomePageState extends State<HomePage> {
     }).toList();
   }
 
-  void clearItem(String item) {
-    rows.removeWhere((t) => t == item);
-    columns.removeWhere((t) => t == item);
-    fields.removeWhere((t) => t == item);
+  void clearItem(String item, String switchItem) {
+    print("Item : $item , SwitchItem : $switchItem");
+    if (rows.contains(item)) {
+      rows.removeWhere((t) => t == item);
+      rows.add(switchItem);
+    } else if (columns.contains(item)) {
+      columns.removeWhere((t) => t == item);
+      columns.add(switchItem);
+    } else if (filters.contains(item)) {
+      filters.removeWhere((t) => t == item);
+      filters.add(switchItem);
+    } else if (values.contains(item)) {
+      values.removeWhere((t) => t == item);
+      values.add(switchItem);
+    } else if (orhers.contains(item)) {
+      orhers.removeWhere((t) => t == item);
+      orhers.add(switchItem);
+    }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        PivotTable(),
-        Container(
-          width: 400,
-          height: 400,
-          color: Colors.green,
-          child: GridView.count(
-            crossAxisSpacing: 4,
-            mainAxisSpacing: 4,
-            crossAxisCount: 2,
-            children: [
-              Container(
-                color: Colors.red,
-              ),
-              Container(
-                color: Colors.red,
-              ),
-              Container(
-                color: Colors.red,
-              ),
-              Container(
-                color: Colors.red,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class PivotTable extends StatefulWidget {
-  @override
-  _PivotTableState createState() => _PivotTableState();
-}
-
-class _PivotTableState extends State<PivotTable> {
-  List<Map<String, dynamic>> jsonData = [];
-  List<String> rowHeaders = [];
-  List<String> columnHeaders = [];
-  List<String> filterValues = [];
-  String selectedFilterValue = '';
-  String selectedFilterKey = 'year'; // Default filter
-
-  List<String> filterKeys = [
-    'year',
-    'category',
-    'region',
-    "cost",
-  ]; // Fields to filter by
-
-  String rowKey = 'category';
-  String columnKey = 'sales';
-  String valueKey = 'region'; // Changeable depending on the data
 
   @override
   void initState() {
+    columns[0] = widget.columnKey;
+    rows[0] = widget.rowKey;
+    filters[0] = widget.selectedFilterKey;
+    values[0] = widget.valueKey;
+    orhers = widget.orhers;
     super.initState();
-    _loadData();
-  }
-
-  void _loadData() {
-    // Sample JSON Data
-    String jsonString = '''
-    [
-      {"category": "Fruits", "region": "North", "year": 2023,"cost":7000, "sales": 1200},
-      {"category": "Fruits", "region": "South", "year": 2023,"cost":7000, "sales": 1500},
-      {"category": "Vegetables", "region": "North", "year": 2022,"cost":7000, "sales": 1100},
-      {"category": "Vegetables", "region": "GTA", "year": 2023,"cost":7000, "sales": 900},
-      {"category": "Fruits", "region": "GTA", "year": 2022,"cost":7000, "sales": "High"},
-      {"category": "Vegetables", "region": "South", "year": 2023,"cost":7000, "sales": 900},
-      {"category": "Vegetables", "region": "KSK", "year": 2022,"cost":7000, "sales": "Medium"}
-    ]
-    ''';
-
-    final List<dynamic> jsonList = json.decode(jsonString);
-    jsonData = List<Map<String, dynamic>>.from(jsonList);
-
-    // Load initial filter values for the default filter key (year)
-    _loadFilterValues();
-  }
-
-  void _loadFilterValues() {
-    filterValues = jsonData
-        .map((data) => data[selectedFilterKey].toString())
-        .toSet()
-        .toList();
-    selectedFilterValue = filterValues.isNotEmpty ? filterValues.first : '';
-    _applyFilter();
-  }
-
-  void _applyFilter() {
-    // Filter data based on the selected filter key and value
-    final filteredData = jsonData
-        .where(
-            (data) => data[selectedFilterKey].toString() == selectedFilterValue)
-        .toList();
-
-    rowHeaders =
-        filteredData.map((data) => data[rowKey].toString()).toSet().toList();
-    columnHeaders =
-        filteredData.map((data) => data[columnKey].toString()).toSet().toList();
-
-    setState(() {});
-  }
-
-  void _clearFilters() {
-    setState(() {
-      selectedFilterKey = 'year'; // Reset to default filter key
-      selectedFilterValue = ''; // Clear the selected filter value
-      _loadFilterValues(); // Reload filter values
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    String json = widget.json;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Dropdown for selecting the filter key (e.g., year, category, region)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        PivotTable(
+          json: json,
+          key: ValueKey(
+              '${columns[0]}}_${rows[0]}}_${values[0]}_${filters[0]}_${orhers[0]}'),
+          columnKey: columns[0],
+          rowKey: rows[0],
+          selectedFilterKey: filters[0],
+          valueKey: values[0],
+        ),
+        SizedBox(
+          width: 20,
+        ),
+        Column(
           children: [
-            Text('Filter by: '),
-            DropdownButton<String>(
-              value: selectedFilterKey,
-              onChanged: (value) {
-                setState(() {
-                  selectedFilterKey = value!;
-                  _loadFilterValues(); // Reload filter values based on the new filter key
-                });
-              },
-              items: filterKeys.map<DropdownMenuItem<String>>((String key) {
-                return DropdownMenuItem<String>(
-                  value: key,
-                  child: Text(key),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-
-        // Dropdown for selecting the filter value (based on selected filter key)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Value: '),
-            DropdownButton<String>(
-              value: selectedFilterValue,
-              onChanged: (value) {
-                setState(() {
-                  selectedFilterValue = value!;
-                  _applyFilter();
-                });
-              },
-              items: filterValues.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-
-        // Button to clear filters
-        ElevatedButton(
-          onPressed: _clearFilters,
-          child: Text('Clear Filters'),
-        ),
-
-        // The Pivot Table
-        Expanded(
-          child: jsonData.isEmpty
-              ? Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns: buildColumns(),
-                    rows: buildRows(),
+            PanelTaget(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      ...containers(orhers),
+                    ],
                   ),
                 ),
+                onAccept: (e) {
+                  setState(() {
+                    if (!orhers.contains(e)) {
+                      clearItem(e, orhers[0]);
+                      orhers.add(e);
+                      orhers.removeAt(0);
+                    }
+                  });
+                },
+                hieght: 200,
+                width: 400),
+            Container(
+              width: 400,
+              height: 400,
+              color: Colors.green,
+              child: GridView.count(
+                crossAxisSpacing: 4,
+                mainAxisSpacing: 4,
+                crossAxisCount: 2,
+                children: [...allPanel()],
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  List<DataColumn> buildColumns() {
-    List<DataColumn> columns = [
-      DataColumn(label: Text('$rowKey/$columnKey')),
+  List<Widget> allPanel() {
+    return [
+      panel(filters, 'Filter'),
+      panel(columns, 'columns'),
+      panel(rows, 'rows'),
+      panel(values, 'values'),
     ];
-    columns
-        .addAll(columnHeaders.map((header) => DataColumn(label: Text(header))));
-    columns.add(DataColumn(label: Text('Total')));
-    return columns;
   }
 
-  List<DataRow> buildRows() {
-    List<DataRow> rows = [];
-
-    for (String rowHeader in rowHeaders) {
-      List<DataCell> cells = [DataCell(Text(rowHeader))];
-
-      int rowTotal = 0;
-      int rowCount = 0; // For counting in case of String
-
-      for (String columnHeader in columnHeaders) {
-        final values = jsonData
-            .where((data) =>
-                data[rowKey] == rowHeader && data[columnKey] == columnHeader)
-            .map((data) => data[valueKey])
-            .toList();
-
-        if (values.isNotEmpty) {
-          // Check if the valueKey is int (sum) or String (count)
-          if (values.first is int) {
-            final value = values.reduce((a, b) => a + b);
-            cells.add(DataCell(Text(value.toString())));
-            rowTotal += value as int;
-          } else if (values.first is String) {
-            final count = values.length; // Count occurrences
-            cells.add(DataCell(Text(count.toString())));
-            rowCount += count;
-          }
-        } else {
-          cells.add(DataCell(Text('0')));
-        }
-      }
-
-      // Add total based on value type
-      if (jsonData.first[valueKey] is int) {
-        cells.add(DataCell(Text(rowTotal.toString())));
-      } else {
-        cells.add(DataCell(Text(rowCount.toString()))); // Total count
-      }
-
-      rows.add(DataRow(cells: cells));
-    }
-
-    // Add total row
-    List<DataCell> totalRowCells = [DataCell(Text('Total'))];
-    int grandTotal = 0;
-    int grandCount = 0;
-
-    for (String columnHeader in columnHeaders) {
-      final values = jsonData
-          .where((data) => data[columnKey] == columnHeader)
-          .map((data) => data[valueKey])
-          .toList();
-
-      if (values.isNotEmpty && values.first is num) {
-        // Filter only the numeric values (int or double) for summation
-        final numericValues = values.where((v) => v is num).toList();
-        final columnTotal = numericValues.fold(
-            0.0, (prev, curr) => prev + (curr as num).toDouble());
-        totalRowCells.add(DataCell(Text(columnTotal.toString())));
-        grandTotal += columnTotal.toInt();
-      } else if (values.isNotEmpty && values.first is String) {
-        // Count occurrences of string values
-        final columnCount = values.where((v) => v is String).length;
-        totalRowCells.add(DataCell(Text(columnCount.toString())));
-        grandCount += columnCount;
-      } else {
-        totalRowCells.add(DataCell(Text('0')));
-      }
-    }
-
-    // Display final grand total or count
-    if (jsonData.first[valueKey] is int) {
-      totalRowCells.add(DataCell(Text(grandTotal.toString())));
-    } else {
-      totalRowCells.add(DataCell(Text(grandCount.toString()))); // Grand count
-    }
-
-    rows.add(DataRow(cells: totalRowCells));
-
-    return rows;
+  Widget panel(
+    List<String> type,
+    String label,
+  ) {
+    return PanelTaget(
+        child: Draggable(
+          child: Column(
+            children: [
+              Text(label),
+              Container(
+                alignment: Alignment.center,
+                color: Theme.of(context).primaryColor,
+                width: 100,
+                height: 50,
+                child: Text(
+                  type[0],
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20),
+                ),
+              ),
+            ],
+          ),
+          data: type[0],
+          feedback: Material(
+            child: Container(
+              alignment: Alignment.center,
+              color: Theme.of(context).primaryColor,
+              width: 100,
+              height: 50,
+              child: Text(type[0]),
+            ),
+          ),
+        ),
+        onAccept: (e) {
+          setState(() {
+            clearItem(e, type[0]);
+            type.add(e);
+            type.removeAt(0);
+          });
+        },
+        hieght: 100,
+        width: 100);
   }
 }
 
